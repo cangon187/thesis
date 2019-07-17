@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#JAVA_HOME=/home/rbruno/software/jdk-11-zgc
+JAVA_HOME=/home/rbruno/software/jdk-11-zgc
 JAVA_EXE="$JAVA_HOME/bin/java"
 
 JVM_OPTS="$JVM_OPTS -server"
