@@ -12,14 +12,17 @@ mkdir results_dir &> /dev/null
 tag="thesis"
 gc="zgc"
 max_heap="4g"
-young_heap="4g"
+young_heap="1g"
 
-# Number of objects where each object occupies 1MB
-size=1000
+# Number of objects where each object occupies in KBs
+size=1000000
 
 # Percentage of Reads = Reads
 # Percentage of Writes = 100 - Reads
 reads=50
+
+# Number of operations
+ops=1000000
 
 # Replace the desired gc
 #gc="zgc"
@@ -35,7 +38,7 @@ function run {
     echo "Starting $sufix"
 
     echo $gc_script
-    $gc_script -jar "Thesis.jar" $size $reads &> $logs_dir/thesis.log
+    $gc_script -jar "Thesis.jar" $size $reads $ops 2>&1 | tee $logs_dir/thesis.log
 
     # Backup Logs "$GC-$max_heap-$min-heap-gc.log"
     echo -n "Saving logs to $results_dir/$sufix ..."
