@@ -15,15 +15,24 @@ tag="test"
 max_heap="4g"
 young_heap="1g"
 
-size=1M
-oper=1M
-reads=50
+size=2M
+
+function runSet {
+    day=`date +"%d:%m:%y"`
+    time=`date +"%H:%M:%S"`
+    reads=$1
+    oper=$2
+    run $bin_dir/cms-java cms
+    run $bin_dir/g1-java g1
+    run $bin_dir/shenandoah-java shenandoah
+    run $bin_dir/zgc-java zgc
+}
 
 function run {
     gc_script=$1
     gc=$2
 
-    prefix=$tag-$max_heap-$young_heap-$size-$reads-$oper-`date +"%d:%m:%y"`-`date +"%H:%M:%S"`
+    prefix=$tag-$max_heap-$young_heap-$size-$reads-$oper-$day-$time
     sufix=$gc
     echo "Starting $sufix"
 
@@ -38,7 +47,14 @@ function run {
     echo
 }
 
-run $bin_dir/cms-java cms
-run $bin_dir/g1-java g1
-run $bin_dir/shenandoah-java shenandoah
-run $bin_dir/zgc-java zgc
+for OPS in 100M
+do
+    for PERCENT in 10
+    do
+        runSet $PERCENT $OPS
+    done
+done
+
+
+
+
