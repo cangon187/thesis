@@ -3,50 +3,42 @@
 work="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 
 results_dir=$work/results
+graphs_dir=$work/graphs
 logs_dir=$work/logs
 bin_dir=$work/bin
 
-mkdir logs_dir &> /dev/null
-mkdir results_dir &> /dev/null
+mkdir $logs_dir &> /dev/null
+mkdir $results_dir &> /dev/null
+mkdir $graphs_dir &> /dev/null
 
-tag="thesis"
-gc="zgc"
+tag="test"
 max_heap="4g"
 young_heap="1g"
 
-# Number of objects where each object occupies in KBs
-size=1000000
-
-# Percentage of Reads = Reads
-# Percentage of Writes = 100 - Reads
+size=1M
+oper=1M
 reads=50
-
-# Number of operations
-ops=1000000
-
-# Replace the desired gc
-#gc="zgc"
-gc="g1"
-#gc="cms"
-#gc="shenandoah"
-#gc="zing"
 
 function run {
     gc_script=$1
+    gc=$2
 
-    sufix=$tag-$gc-$max_heap-$young_heap-`date +%s`
+    prefix=$tag-$max_heap-$young_heap-$size-$reads-$oper-`date +"%d:%m:%y"`-`date +"%H:%M:%S"`
+    sufix=$gc
     echo "Starting $sufix"
 
-    echo $gc_script
-    $gc_script -jar "Thesis.jar" $size $reads $ops 2>&1 | tee $logs_dir/thesis.log
+    $gc_script -jar "Microbench.jar" $size $reads $oper &> $logs_dir/microbench.log
 
     # Backup Logs "$GC-$max_heap-$min-heap-gc.log"
-    echo -n "Saving logs to $results_dir/$sufix ..."
-    mkdir -p $results_dir/$sufix
-    cp $work/logs/thesis.log $results_dir/$sufix/
-    cp /tmp/jvm.log $results_dir/$sufix
-    echo "done!"
-    echo "Finished $sufix"
+    echo "Saving logs to $results_dir/$prefix/$sufix ..."
+    mkdir -p $results_dir/$prefix/$sufix
+    cp $logs_dir/microbench.log $results_dir/$prefix/$sufix
+    cp /tmp/jvm.log $results_dir/$prefix/$sufix
+    echo "Finished $prefix/$sufix"
+    echo
 }
 
-run $bin_dir/$gc-java
+run $bin_dir/cms-java cms
+run $bin_dir/g1-java g1
+run $bin_dir/shenandoah-java shenandoah
+run $bin_dir/zgc-java zgc

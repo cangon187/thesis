@@ -1,7 +1,10 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
+import os, sys
+from os import walk
 from scipy.stats import sem, t
+from urllib.parse import unquote
 
 
 def graph_memory(files, collectors, workload):
@@ -32,7 +35,7 @@ def memory_cms(file, workload, collector):
         plt.plot([time[i], time[i]], [0, before[i]], 'lightcoral')
         plt.plot([time[i], time[i]], [0, after[i]], 'c')
 
-    plt.xlabel('Time (ms)')
+    plt.xlabel('Time (s)')
     plt.ylabel('Memory (MB)')
 
     plt.title('memory_workload_' + workload + ' ' + collector, loc='right')
@@ -46,7 +49,7 @@ def memory_cms(file, workload, collector):
     ax.yaxis.set_major_locator(plt.MaxNLocator(10))
     ax.xaxis.set_major_locator(plt.MaxNLocator(10))
     fig.set_size_inches((18, 9), forward=False)
-    plt.savefig('microbench/memory_workload_' + workload + ' ' + collector, dpi=100)
+    plt.savefig('graphs/' + workload + '/memory_' + collector, dpi=100)
     # plt.show()
     plt.close(fig)
 
@@ -72,7 +75,7 @@ def memory_g1(file, workload, collector):
         plt.plot([time[i], time[i]], [0, before[i]], 'lightcoral')
         plt.plot([time[i], time[i]], [0, after[i]], 'c')
 
-    plt.xlabel('Time (ms)')
+    plt.xlabel('Time (s)')
     plt.ylabel('Memory (MB)')
 
     plt.title('memory_workload_' + workload + ' ' + collector, loc='right')
@@ -86,7 +89,7 @@ def memory_g1(file, workload, collector):
     ax.yaxis.set_major_locator(plt.MaxNLocator(10))
     ax.xaxis.set_major_locator(plt.MaxNLocator(10))
     fig.set_size_inches((18, 9), forward=False)
-    plt.savefig('microbench/memory_workload_' + workload + ' ' + collector, dpi=100)
+    plt.savefig('graphs/' + workload + '/memory_' + collector, dpi=100)
     # plt.show()
     plt.close(fig)
 
@@ -125,7 +128,7 @@ def memory_shenandoah(file, workload, collector):
         plt.plot([correct_time[i], correct_time[i]], [0, before[i]], 'lightcoral')
         plt.plot([correct_time[i], correct_time[i]], [0, after[i]], 'c')
 
-    plt.xlabel('Time (ms)')
+    plt.xlabel('Time (s)')
     plt.ylabel('Memory (MB)')
 
     plt.title('memory_workload_' + workload + ' ' + collector, loc='right')
@@ -138,7 +141,7 @@ def memory_shenandoah(file, workload, collector):
     ax.yaxis.set_major_locator(plt.MaxNLocator(10))
     ax.xaxis.set_major_locator(plt.MaxNLocator(10))
     fig.set_size_inches((18, 9), forward=False)
-    plt.savefig('microbench/memory_workload_' + workload + ' ' + collector, dpi=100)
+    plt.savefig('graphs/' + workload + '/memory_' + collector, dpi=100)
     # plt.show()
     plt.close(fig)
 
@@ -166,7 +169,7 @@ def memory_zgc(file, workload, collector):
         plt.plot([time[i], time[i]], [0, before[i]], 'lightcoral')
         plt.plot([time[i], time[i]], [0, after[i]], 'c')
 
-    plt.xlabel('Time (ms)')
+    plt.xlabel('Time (s)')
     plt.ylabel('Memory (MB)')
 
     plt.title('memory_workload_' + workload + ' ' + collector, loc='right')
@@ -180,7 +183,7 @@ def memory_zgc(file, workload, collector):
     ax.yaxis.set_major_locator(plt.MaxNLocator(10))
     ax.xaxis.set_major_locator(plt.MaxNLocator(10))
     fig.set_size_inches((18, 9), forward=False)
-    plt.savefig('microbench/memory_workload_' + workload + ' ' + collector, dpi=100)
+    plt.savefig('graphs/' + workload + '/memory_' + collector, dpi=100)
     # plt.show()
     plt.close(fig)
 
@@ -214,7 +217,7 @@ def latency(file, workload, collector):
     plt.title('latency_workload_' + workload + ' ' + collector, loc='right')
 
     fig.set_size_inches((18, 9), forward=False)
-    plt.savefig('microbench/latency_workload_' + workload + ' ' + collector, dpi=100)
+    plt.savefig('graphs/' + workload + '/latency_' + collector, dpi=100)
     # plt.show()
     plt.close(fig)
 
@@ -231,16 +234,17 @@ def throughput(file, ax, boxplot_data, boxplot_errors, collector):
     with open(file, 'r') as f:
         for line in f:
             if 'Throughput:' in line:
-                element = line.split(' ')[1]
+                element = line.split(' ')[2]
                 operations.append(element[:len(element) - 1])
     data = np.char.replace(operations, ',', '.')
     data = data.astype(np.float)
+    data = data.astype(np.int)
 
     new_data = []
-    for i in range(1000, len(data), 1000):
-        new_data.append(data[i-1000:i].sum())
-
+    for i in range(10, len(data), 10):
+        new_data.append(data[i-10:i].sum())
     x = np.arange(0, len(new_data), 1)
+    x = np.divide(x,10)
 
     if collector is 'cms':
         ax.plot(x, new_data, label=collector, color='b')
@@ -261,11 +265,11 @@ def graph_throughput(files, collectors, workload):
     boxplot_data = []
     boxplot_errors = []
     fig = plt.figure()
-    ax = fig.add_subplot(411)
-    ax1 = fig.add_subplot(412)
-    ax2 = fig.add_subplot(413)
+    ax = fig.add_subplot(511)
+    ax1 = fig.add_subplot(512)
+    ax2 = fig.add_subplot(513)
     ax3 = fig.add_subplot(514)
-    bp = fig.add_subplot(414)
+    bp = fig.add_subplot(515)
 
     throughput(files[0] + '/microbench.log', ax, boxplot_data, boxplot_errors, collectors[0])
     throughput(files[1] + '/microbench.log', ax1, boxplot_data, boxplot_errors, collectors[1])
@@ -274,7 +278,7 @@ def graph_throughput(files, collectors, workload):
 
     boxplot_mean = [np.mean(boxplot_data[0]), np.mean(boxplot_data[1]), np.mean(boxplot_data[2])
                     ,np.mean(boxplot_data[3])]
-    bp.errorbar(boxplot_mean, [1, 2, 3], xerr=boxplot_errors, fmt='o')
+    bp.errorbar(boxplot_mean, [1, 2, 3, 4], xerr=boxplot_errors, fmt='o')
 
     plt.yticks((1, 2, 3, 4), collectors)
     bp.yaxis.set_label_position('right')
@@ -285,26 +289,170 @@ def graph_throughput(files, collectors, workload):
     ax3.legend(bbox_to_anchor=(0., 1.02, 1., .102), loc=3, ncol=2, mode="expand", borderaxespad=0.)
     fig.set_size_inches((18, 9), forward=False)
     plt.subplots_adjust(hspace=0.5)
-    plt.savefig('microbench/throughput_workload_' + workload, dpi=100)
+    plt.savefig('graphs/' + workload + '/throughput', dpi=100)
     #plt.show()
     plt.close(fig)
+
+def get_array_percent(percent):
+    result_dir = []
+    main_dir = []
+    for (dir_path, dir_names, file_names) in walk('results/'):
+        main_dir.extend(dir_names)
+        break
+
+    for sub_dir in main_dir:
+        if sub_dir.split('-')[4] == percent:
+            result_dir.append('results/' + sub_dir)
+
+    return result_dir
+
+def get_array_heap_size(heap_size):
+    result_dir = []
+    main_dir = []
+    for (dir_path, dir_names, file_names) in walk('results/'):
+        main_dir.extend(dir_names)
+        break
+
+    for sub_dir in main_dir:
+        if sub_dir.split('-')[1] == heap_size:
+            if sub_dir.split('-')[4] != '100':
+                result_dir.append('results/' + sub_dir)
+            else:
+                tmp = 'results/' + sub_dir
+    result_dir.append(tmp)
+
+    return result_dir
+
+def throughput_per_percent(array, percent):
+    ind = np.arange(len(array))
+    ind_name = []
+    cms_array = []
+    g1_array = []
+    shenandoah_array = []
+    zgc_array = []
+    cms_array_std = []
+    g1_array_std = []
+    shenandoah_array_std = []
+    zgc_array_std = []
+    width = 0.10
+    width_pos = [ind-width*1.5, ind-width/2, ind+width/2, ind+width*1.5]
+    fig, ax = plt.subplots()
+    for sub_dir in array:
+        ind_name.append(sub_dir.split('-')[1])
+        for gc in garbageCollectors:
+            result = throughput_per_percent_extra(sub_dir + '/' + gc)
+            if gc is 'cms':
+                cms_array.append(result[0])
+                cms_array_std.append(result[1])
+            if gc is 'g1':
+                g1_array.append(result[0])
+                g1_array_std.append(result[1])
+            if gc is 'shenandoah':
+                shenandoah_array.append(result[0])
+                shenandoah_array_std.append(result[1])
+            if gc is 'zgc':
+                zgc_array.append(result[0])
+                zgc_array_std.append(result[1])
+
+    ax.bar(width_pos[0], cms_array, width, yerr=cms_array_std, label='CMS')
+    ax.bar(width_pos[1], g1_array, width, yerr=g1_array_std, label='G1')
+    ax.bar(width_pos[2], shenandoah_array, width, yerr=shenandoah_array_std, label='SHENANDOAH')
+    ax.bar(width_pos[3], zgc_array, width, yerr=zgc_array_std, label='ZGC')
+
+    ax.set_ylabel('Operations')
+    ax.set_xticks(ind)
+    ax.set_xticklabels(ind_name)
+    ax.set_title(percent + '% Reads on ' + array[0].split('-')[5] + ' Operations')
+    ax.legend()
+    fig.set_size_inches((18, 9), forward=False)
+    plt.savefig('graphs/throughput_percent_' + percent, dpi=100)
+
+def throughput_per_heap_size(array, heap_size):
+    ind = np.arange(len(array)) # 7
+    ind_name = []
+    cms_array = []
+    g1_array = []
+    shenandoah_array = []
+    zgc_array = []
+    cms_array_std = []
+    g1_array_std = []
+    shenandoah_array_std = []
+    zgc_array_std = []
+    width = 0.10
+    width_pos = [ind-width*1.5, ind-width/2, ind+width/2, ind+width*1.5]
+    fig, ax = plt.subplots()
+    for sub_dir in array:
+        ind_name.append(sub_dir.split('-')[4] + '%')
+        for gc in garbageCollectors:
+            result = throughput_per_percent_extra(sub_dir + '/' + gc)
+            if gc is 'cms':
+                cms_array.append(result[0])
+                cms_array_std.append(result[1])
+            if gc is 'g1':
+                g1_array.append(result[0])
+                g1_array_std.append(result[1])
+            if gc is 'shenandoah':
+                shenandoah_array.append(result[0])
+                shenandoah_array_std.append(result[1])
+            if gc is 'zgc':
+                zgc_array.append(result[0])
+                zgc_array_std.append(result[1])
+
+    ax.bar(width_pos[0], cms_array, width, yerr=cms_array_std, label='CMS')
+    ax.bar(width_pos[1], g1_array, width, yerr=g1_array_std, label='G1')
+    ax.bar(width_pos[2], shenandoah_array, width, yerr=shenandoah_array_std, label='SHENANDOAH')
+    ax.bar(width_pos[3], zgc_array, width, yerr=zgc_array_std, label='ZGC')
+
+    ax.set_ylabel('Operations')
+    ax.set_xticks(ind)
+    ax.set_xticklabels(ind_name)
+    ax.set_title(array[0].split('-')[5] + ' Operations on a ' + heap_size + ' Max Heap Size')
+    ax.legend()
+    fig.set_size_inches((18, 9), forward=False)
+    plt.savefig('graphs/throughput_heap_size_' + heap_size, dpi=100)
+
+def throughput_per_percent_extra(path):
+    result = []
+    operations = []
+    with open(path + '/microbench.log', 'r') as f:
+        for line in f:
+            if 'Throughput:' in line:
+                element = line.split(' ')[2]
+                operations.append(element[:len(element) - 1])
+    operations = [ float(x) for x in operations ]
+    operations = [ int(x) for x in operations]
+    data = operations[30:len(operations)]
+
+    result.append(np.mean(data))
+    result.append(np.std(data))
+    return result
 
 
 garbageCollectors = ['cms', 'g1', 'shenandoah', 'zgc']
 
-#####################################################
-##### EDIT BELOW ####################################
+maindir = []
+for (dirpath, dirnames, filenames) in walk('results/'):
+    maindir.extend(dirnames)
+    break
+for f in maindir:
+    subsubdir = []
+    for (dirpath, dirnames, filenames) in walk('results/' + f):
+        subsubdir.extend(dirnames)
+        break
+    read_stdout = []
+    for final in subsubdir:
+        read_stdout.append('results/' + f + '/' + final)
+    workload = unquote(unquote(f))
+    workload = workload.replace(':','-')
+    #s.mkdir('graphs/' + workload)
+    #graph_memory(read_stdout, garbageCollectors, workload)
+    #graph_latency(read_stdout, garbageCollectors, workload)
+    #graph_throughput(read_stdout, garbageCollectors, workload)
 
-# Colocar aqui os relative paths dos resultados
-read_stdout4 = ['microbench/thesis-cms-2g-2g-1562678077',
-                'microbench/thesis-g1-2g-2g-1562678242',
-                'microbench/thesis-shenandoah-2g-2g-1562678365',
-                'microbench/thesis-zgc-2g-2g-1562678484']
+heap_sizes = ['4g', '6g', '8g']
+percentages = ['0', '10', '30', '50', '70', '90', '100']
 
-# graph_memory gera gráfico de memória (vai para ./microbench/ folder)
-# graph_latency gera gráfico de latencia (vai para ./microbench/ folder)
-# graph_throughput gera gráfico de throughput (Ainda não está a ser logged) (vai para ./microbench/ folder)
-
-graph_memory(read_stdout4, garbageCollectors, '4gb')
-graph_latency(read_stdout4, garbageCollectors, '4gb')
-
+for heap_size in heap_sizes:
+    throughput_per_heap_size(get_array_heap_size(heap_size), heap_size)
+for percent in percentages:
+    throughput_per_percent(get_array_percent(percent), percent)

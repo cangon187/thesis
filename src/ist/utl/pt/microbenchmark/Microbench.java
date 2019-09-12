@@ -56,8 +56,8 @@ public class Microbench{
             try
             {
                 int tmp = 0;
-                int dataSize = Integer.parseInt(arg[0]);
-                int nOperations = Integer.parseInt(arg[2]);
+                int dataSize = Integer.parseInt(arg[0].substring(0, arg[0].length()-1))*1000000;
+                int nOperations = Integer.parseInt(arg[2].substring(0, arg[2].length()-1))*1000000;
                 double readPercentage = (double) Integer.parseInt(arg[1]) / 100;
                 Random rand = new Random();
                 Microbench dataSet = new Microbench(dataSize);
@@ -81,8 +81,10 @@ public class Microbench{
                     // Increment throughput counter
                     rmdtask.counter++;
                 }
-                Thread.sleep(100);
-                System.out.println("Ending Benchmark : " + tmp);
+                timer.cancel();
+                timer.purge();
+                double mean = ((nOperations / rmdtask.timer) * 100) + tmp;
+                System.out.println("[Mean] Throughput: " + mean);
             }
             catch(Exception e)
             {
