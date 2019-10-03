@@ -1,4 +1,6 @@
 import numpy as np
+import matplotlib
+import scipy
 import matplotlib.pyplot as plt
 import matplotlib.patches as mpatches
 import os, sys
@@ -21,7 +23,7 @@ def memory_cms(file, workload, collector):
     time = []
     with open(file, 'r') as f:
         for line in f:
-            if 'M->' in line:
+            if 'M->' in line and float(line[1:5]) > 30:
                 for element in line.split(' '):
                     if 'info' in element:
                         t = element.split(']')[0][1:len(element.split(']')[0]) - 1]
@@ -31,25 +33,32 @@ def memory_cms(file, workload, collector):
                         before.append(int(element.split('M')[0]))
                         after.append(int(element.split('M')[1][2:]))
 
-    for i in range(len(before)):
+    for i in range(len(time)):
         plt.plot([time[i], time[i]], [0, before[i]], 'lightcoral')
         plt.plot([time[i], time[i]], [0, after[i]], 'c')
 
-    plt.xlabel('Time (s)')
-    plt.ylabel('Memory (MB)')
+    plt.xlabel('Time (s)', labelpad=20)
+    plt.ylabel('Memory utilisation (MB)', labelpad=20)
 
-    plt.title('memory_workload_' + workload + ' ' + collector, loc='right')
+    workload_split = workload.split('-')
+    title = collector.upper()  + ' | ' + 'Heap Size ' + workload_split[1][:len(workload_split[1])-1] + 'GB' \
+            + ' | ' + 'Data Size ' + workload_split[3][:len(workload_split[3])-1] + 'GB'\
+            + ' | ' + 'Read Percentage ' + workload_split[4] + '%' \
+            + ' | ' + 'Operations ' + workload_split[5]
 
-    before_patch = mpatches.Patch(color='lightcoral', label=collector + ' Before')
-    after_patch = mpatches.Patch(color='c', label=collector + ' After')
+    plt.title(title , loc='right')
 
-    ax.legend(handles=[before_patch, after_patch], bbox_to_anchor=(0., 1.02, 1., .102), loc=1, ncol=2, mode='expand',
-              borderaxespad=0.)
+    before_patch = mpatches.Patch(color='lightcoral', label=collector.upper() + ' before GC')
+    after_patch = mpatches.Patch(color='c', label=collector.upper() + ' after GC')
+
+    ax.legend(handles=[before_patch, after_patch], bbox_to_anchor=(0., 1.02, 1., .102),
+              edgecolor='black', fancybox=True,
+              loc=1, ncol=2)
 
     ax.yaxis.set_major_locator(plt.MaxNLocator(10))
     ax.xaxis.set_major_locator(plt.MaxNLocator(10))
     fig.set_size_inches((18, 9), forward=False)
-    plt.savefig('graphs/' + workload + '/memory_' + collector, dpi=100)
+    plt.savefig('graphs/' + workload + '/memory_' + collector, dpi=100, bbox_inches = 'tight', pad_inches = 0.5)
     # plt.show()
     plt.close(fig)
 
@@ -61,35 +70,42 @@ def memory_g1(file, workload, collector):
     time = []
     with open(file, 'r') as f:
         for line in f:
-            if 'Pause Young (Normal) (G1 Evacuation Pause) ' in line:
+            if 'Pause Young (Normal) (G1 Evacuation Pause) ' in line and float(line[1:5]) > 30:
                 for element in line.split(' '):
-                    if '->' in element:
-                        before.append((int(element.split('M')[0])))
-                        after.append((int(element.split('M')[1][2:])))
                     if 'info' in element:
                         t = element.split(']')[0][1:len(element.split(']')[0]) - 1]
                         t = float(t.replace(',', '.'))
                         time.append(t)
+                    if '->' in element:
+                        before.append((int(element.split('M')[0])))
+                        after.append((int(element.split('M')[1][2:])))
 
-    for i in range(len(before)):
+    for i in range(len(time)):
         plt.plot([time[i], time[i]], [0, before[i]], 'lightcoral')
         plt.plot([time[i], time[i]], [0, after[i]], 'c')
 
-    plt.xlabel('Time (s)')
-    plt.ylabel('Memory (MB)')
+    plt.xlabel('Time (s)', labelpad=20)
+    plt.ylabel('Memory utilisation (MB)', labelpad=20)
 
-    plt.title('memory_workload_' + workload + ' ' + collector, loc='right')
+    workload_split = workload.split('-')
+    title = collector.upper()  + ' | ' + 'Heap Size ' + workload_split[1][:len(workload_split[1])-1] + 'GB' \
+            + ' | ' + 'Data Size ' + workload_split[3][:len(workload_split[3])-1] + 'GB'\
+            + ' | ' + 'Read Percentage ' + workload_split[4] + '%' \
+            + ' | ' + 'Operations ' + workload_split[5]
 
-    before_patch = mpatches.Patch(color='lightcoral', label=collector + ' Before')
-    after_patch = mpatches.Patch(color='c', label=collector + ' After')
+    plt.title(title , loc='right')
 
-    ax.legend(handles=[before_patch, after_patch], bbox_to_anchor=(0., 1.02, 1., .102), loc=1, ncol=2, mode='expand',
-              borderaxespad=0.)
+    before_patch = mpatches.Patch(color='lightcoral', label=collector.upper() + ' before GC')
+    after_patch = mpatches.Patch(color='c', label=collector.upper() + ' after GC')
+
+    ax.legend(handles=[before_patch, after_patch], bbox_to_anchor=(0., 1.02, 1., .102),
+              edgecolor='black', fancybox=True,
+              loc=1, ncol=2)
 
     ax.yaxis.set_major_locator(plt.MaxNLocator(10))
     ax.xaxis.set_major_locator(plt.MaxNLocator(10))
     fig.set_size_inches((18, 9), forward=False)
-    plt.savefig('graphs/' + workload + '/memory_' + collector, dpi=100)
+    plt.savefig('graphs/' + workload + '/memory_' + collector, dpi=100, bbox_inches = 'tight', pad_inches = 0.5)
     # plt.show()
     plt.close(fig)
 
@@ -124,24 +140,44 @@ def memory_shenandoah(file, workload, collector):
             after.append(temp[i])
             correct_time.append(time[i])
 
-    for i in range(len(before)):
-        plt.plot([correct_time[i], correct_time[i]], [0, before[i]], 'lightcoral')
-        plt.plot([correct_time[i], correct_time[i]], [0, after[i]], 'c')
+    newTime = []
+    newBefore = []
+    newAfter = []
 
-    plt.xlabel('Time (s)')
-    plt.ylabel('Memory (MB)')
+    iterator = 0
+    while iterator < len(correct_time):
+        if correct_time[iterator] > 30 :
+            newTime.append(correct_time[iterator])
+            newBefore.append(before[iterator])
+            newAfter.append(after[iterator])
+        iterator += 1
 
-    plt.title('memory_workload_' + workload + ' ' + collector, loc='right')
+    for i in range(len(newTime)):
+        plt.plot([newTime[i], newTime[i]], [0, newBefore[i]], 'lightcoral')
+        plt.plot([newTime[i], newTime[i]], [0, newAfter[i]], 'c')
 
-    before_patch = mpatches.Patch(color='lightcoral', label=collector + ' Before')
-    after_patch = mpatches.Patch(color='c', label=collector + ' After')
+    plt.xlabel('Time (s)', labelpad=20)
+    plt.ylabel('Memory utilisation (MB)', labelpad=20)
 
-    ax.legend(handles=[before_patch, after_patch], bbox_to_anchor=(0., 1.02, 1., .102), loc=1, ncol=2, mode='expand',
-              borderaxespad=0.)
+    workload_split = workload.split('-')
+    title = collector.upper()  + ' | ' + 'Heap Size ' + workload_split[1][:len(workload_split[1])-1] + 'GB' \
+            + ' | ' + 'Data Size ' + workload_split[3][:len(workload_split[3])-1] + 'GB'\
+            + ' | ' + 'Read Percentage ' + workload_split[4] + '%' \
+            + ' | ' + 'Operations ' + workload_split[5]
+
+    plt.title(title , loc='right')
+
+    before_patch = mpatches.Patch(color='lightcoral', label=collector.upper() + ' before GC')
+    after_patch = mpatches.Patch(color='c', label=collector.upper() + ' after GC')
+
+    ax.legend(handles=[before_patch, after_patch], bbox_to_anchor=(0., 1.02, 1., .102),
+              edgecolor='black', fancybox=True,
+              loc=1, ncol=2)
+
     ax.yaxis.set_major_locator(plt.MaxNLocator(10))
     ax.xaxis.set_major_locator(plt.MaxNLocator(10))
     fig.set_size_inches((18, 9), forward=False)
-    plt.savefig('graphs/' + workload + '/memory_' + collector, dpi=100)
+    plt.savefig('graphs/' + workload + '/memory_' + collector, dpi=100, bbox_inches = 'tight', pad_inches = 0.5)
     # plt.show()
     plt.close(fig)
 
@@ -153,7 +189,7 @@ def memory_zgc(file, workload, collector):
     time = []
     with open(file, 'r') as f:
         for line in f:
-            if 'Used:' in line:
+            if 'Used:' in line and float(line[1:5]) > 30:
                 temp = []
                 for element in line.split(' '):
                     if 'M' in element:
@@ -165,25 +201,32 @@ def memory_zgc(file, workload, collector):
                     t = float(t.replace(',', '.'))
                     time.append(t)
 
-    for i in range(len(before)):
+    for i in range(len(time)):
         plt.plot([time[i], time[i]], [0, before[i]], 'lightcoral')
         plt.plot([time[i], time[i]], [0, after[i]], 'c')
 
-    plt.xlabel('Time (s)')
-    plt.ylabel('Memory (MB)')
+    plt.xlabel('Time (s)', labelpad=20)
+    plt.ylabel('Memory utilisation (MB)', labelpad=20)
 
-    plt.title('memory_workload_' + workload + ' ' + collector, loc='right')
+    workload_split = workload.split('-')
+    title = collector.upper()  + ' | ' + 'Heap Size ' + workload_split[1][:len(workload_split[1])-1] + 'GB' \
+            + ' | ' + 'Data Size ' + workload_split[3][:len(workload_split[3])-1] + 'GB'\
+            + ' | ' + 'Read Percentage ' + workload_split[4] + '%' \
+            + ' | ' + 'Operations ' + workload_split[5]
 
-    before_patch = mpatches.Patch(color='lightcoral', label=collector + ' Before')
-    after_patch = mpatches.Patch(color='c', label=collector + ' After')
+    plt.title(title , loc='right')
 
-    ax.legend(handles=[before_patch, after_patch], bbox_to_anchor=(0., 1.02, 1., .102), loc=1, ncol=2, mode='expand',
-              borderaxespad=0.)
+    before_patch = mpatches.Patch(color='lightcoral', label=collector.upper() + ' before GC')
+    after_patch = mpatches.Patch(color='c', label=collector.upper() + ' after GC')
+
+    ax.legend(handles=[before_patch, after_patch], bbox_to_anchor=(0., 1.02, 1., .102),
+              edgecolor='black', fancybox=True,
+              loc=1, ncol=2)
 
     ax.yaxis.set_major_locator(plt.MaxNLocator(10))
     ax.xaxis.set_major_locator(plt.MaxNLocator(10))
     fig.set_size_inches((18, 9), forward=False)
-    plt.savefig('graphs/' + workload + '/memory_' + collector, dpi=100)
+    plt.savefig('graphs/' + workload + '/memory_' + collector, dpi=100, bbox_inches = 'tight', pad_inches = 0.5)
     # plt.show()
     plt.close(fig)
 
@@ -209,12 +252,18 @@ def latency(file, workload, collector):
                         data.append(float(line.split(' ')[inc].replace(',', '.')) * 1000)
                         break
     binwidth = 1
-    plt.hist(data, bins=np.arange(0, max(data) + binwidth, binwidth), edgecolor='k')
+    plt.hist(data, bins=np.arange(0, max(data) + binwidth, binwidth), color='c', edgecolor='k')
 
     plt.xlabel('Time (ms)')
     plt.ylabel('Count')
 
-    plt.title('latency_workload_' + workload + ' ' + collector, loc='right')
+    workload_split = workload.split('-')
+    title = collector.upper()  + ' | ' + 'Heap Size ' + workload_split[1][:len(workload_split[1])-1] + 'GB' \
+            + ' | ' + 'Data Size ' + workload_split[3][:len(workload_split[3])-1] + 'GB'\
+            + ' | ' + 'Read Percentage ' + workload_split[4] + '%' \
+            + ' | ' + 'Operations ' + workload_split[5]
+
+    plt.title(title , loc='right')
 
     fig.set_size_inches((18, 9), forward=False)
     plt.savefig('graphs/' + workload + '/latency_' + collector, dpi=100)
@@ -223,11 +272,11 @@ def latency(file, workload, collector):
 
 
 def mean_confidence_interval(data, confidence):
-    n = len(data)
-    std_err = sem(data)
-    h = std_err * t.ppf((1 + confidence) / 2, n - 1)
+    a = 1.0 * np.array(data)
+    n = len(a)
+    m, se = np.mean(a), scipy.stats.sem(a)
+    h = se * scipy.stats.t.ppf((1 + confidence) / 2., n - 1)
     return h
-
 
 def throughput(file, ax, boxplot_data, boxplot_errors, collector):
     operations = []
@@ -244,21 +293,20 @@ def throughput(file, ax, boxplot_data, boxplot_errors, collector):
     for i in range(10, len(data), 10):
         new_data.append(data[i-10:i].sum())
     x = np.arange(0, len(new_data), 1)
-    x = np.divide(x,10)
 
     if collector is 'cms':
-        ax.plot(x, new_data, label=collector, color='b')
+        ax.plot(x[30:], new_data[30:], label=collector.upper(), color='b')
     if collector is 'g1':
-        ax.plot(x, new_data, label=collector, color='lightcoral')
+        ax.plot(x[30:], new_data[30:], label=collector.upper(), color='lightcoral')
     if collector is 'shenandoah':
-        ax.plot(x, new_data, label=collector, color='c')
+        ax.plot(x[30:], new_data[30:], label=collector.upper(), color='c')
     if collector is 'zgc':
-        ax.plot(x, new_data, label=collector, color='gray')
+        ax.plot(x[30:], new_data[30:], label=collector.upper(), color='gray')
 
     ax.ticklabel_format(style='plain')
 
-    boxplot_data.append(new_data)
-    boxplot_errors.append(mean_confidence_interval(new_data, 0.95))
+    boxplot_data.append(data[30:])
+    boxplot_errors.append(mean_confidence_interval(data[30:], 0.95))
 
 
 def graph_throughput(files, collectors, workload):
@@ -280,13 +328,26 @@ def graph_throughput(files, collectors, workload):
                     ,np.mean(boxplot_data[3])]
     bp.errorbar(boxplot_mean, [1, 2, 3, 4], xerr=boxplot_errors, fmt='o')
 
-    plt.yticks((1, 2, 3, 4), collectors)
+    collectorsUpper = []
+
+    for x in collectors:
+        collectorsUpper.append(x.upper())
+
+    plt.yticks((1, 2, 3, 4), collectorsUpper)
     bp.yaxis.set_label_position('right')
-    plt.title('throughput_workload_' + workload, loc='right')
-    ax.legend(bbox_to_anchor=(0., 1.02, 1., .102), loc=3, ncol=2, mode="expand", borderaxespad=0.)
-    ax1.legend(bbox_to_anchor=(0., 1.02, 1., .102), loc=3, ncol=2, mode="expand", borderaxespad=0.)
-    ax2.legend(bbox_to_anchor=(0., 1.02, 1., .102), loc=3, ncol=2, mode="expand", borderaxespad=0.)
-    ax3.legend(bbox_to_anchor=(0., 1.02, 1., .102), loc=3, ncol=2, mode="expand", borderaxespad=0.)
+
+    workload_split = workload.split('-')
+    title = 'Heap Size ' + workload_split[1][:len(workload_split[1]) - 1] + 'GB' \
+            + ' | ' + 'Data Size ' + workload_split[3][:len(workload_split[3]) - 1] + 'GB' \
+            + ' | ' + 'Read Percentage ' + workload_split[4] + '%' \
+            + ' | ' + 'Operations ' + workload_split[5]
+
+    ax.set_title(title, loc='right')
+
+    ax.legend(loc=1, ncol=1, borderaxespad=0., edgecolor='black', fancybox=True,)
+    ax1.legend(loc=1, ncol=1, borderaxespad=0., edgecolor='black', fancybox=True,)
+    ax2.legend(loc=1, ncol=1, borderaxespad=0., edgecolor='black', fancybox=True,)
+    ax3.legend(loc=1, ncol=1, borderaxespad=0., edgecolor='black', fancybox=True,)
     fig.set_size_inches((18, 9), forward=False)
     plt.subplots_adjust(hspace=0.5)
     plt.savefig('graphs/' + workload + '/throughput', dpi=100)
@@ -313,13 +374,16 @@ def get_array_heap_size(heap_size):
         main_dir.extend(dir_names)
         break
 
+    tmp = None
+
     for sub_dir in main_dir:
         if sub_dir.split('-')[1] == heap_size:
             if sub_dir.split('-')[4] != '100':
                 result_dir.append('results/' + sub_dir)
             else:
                 tmp = 'results/' + sub_dir
-    result_dir.append(tmp)
+    if tmp is not None:
+        result_dir.append(tmp)
 
     return result_dir
 
@@ -354,16 +418,17 @@ def throughput_per_percent(array, percent):
                 zgc_array.append(result[0])
                 zgc_array_std.append(result[1])
 
-    ax.bar(width_pos[0], cms_array, width, yerr=cms_array_std, label='CMS')
-    ax.bar(width_pos[1], g1_array, width, yerr=g1_array_std, label='G1')
-    ax.bar(width_pos[2], shenandoah_array, width, yerr=shenandoah_array_std, label='SHENANDOAH')
-    ax.bar(width_pos[3], zgc_array, width, yerr=zgc_array_std, label='ZGC')
+    ax.bar(width_pos[0], cms_array, width, yerr=cms_array_std, label='CMS', color='b')
+    ax.bar(width_pos[1], g1_array, width, yerr=g1_array_std, label='G1', color='lightcoral')
+    ax.bar(width_pos[2], shenandoah_array, width, yerr=shenandoah_array_std, label='SHENANDOAH', color='c')
+    ax.bar(width_pos[3], zgc_array, width, yerr=zgc_array_std, label='ZGC', color='gray')
 
     ax.set_ylabel('Operations')
+    ax.set_xlabel('Heap Size')
     ax.set_xticks(ind)
     ax.set_xticklabels(ind_name)
-    ax.set_title(percent + '% Reads on ' + array[0].split('-')[5] + ' Operations')
-    ax.legend()
+    ax.set_title(percent + '% Reads on ' + array[0].split('-')[5] + ' Operations', loc='right')
+    ax.legend(bbox_to_anchor=(0., 1.02, 1., .102), edgecolor='black', fancybox=True, loc=1, ncol=4)
     fig.set_size_inches((18, 9), forward=False)
     plt.savefig('graphs/throughput_percent_' + percent, dpi=100)
 
@@ -398,16 +463,17 @@ def throughput_per_heap_size(array, heap_size):
                 zgc_array.append(result[0])
                 zgc_array_std.append(result[1])
 
-    ax.bar(width_pos[0], cms_array, width, yerr=cms_array_std, label='CMS')
-    ax.bar(width_pos[1], g1_array, width, yerr=g1_array_std, label='G1')
-    ax.bar(width_pos[2], shenandoah_array, width, yerr=shenandoah_array_std, label='SHENANDOAH')
-    ax.bar(width_pos[3], zgc_array, width, yerr=zgc_array_std, label='ZGC')
+    ax.bar(width_pos[0], cms_array, width, yerr=cms_array_std, label='CMS', color='b')
+    ax.bar(width_pos[1], g1_array, width, yerr=g1_array_std, label='G1', color='lightcoral')
+    ax.bar(width_pos[2], shenandoah_array, width, yerr=shenandoah_array_std, label='SHENANDOAH', color='c')
+    ax.bar(width_pos[3], zgc_array, width, yerr=zgc_array_std, label='ZGC', color='gray')
 
     ax.set_ylabel('Operations')
+    ax.set_xlabel('Percentage of Read Operations')
     ax.set_xticks(ind)
     ax.set_xticklabels(ind_name)
-    ax.set_title(array[0].split('-')[5] + ' Operations on a ' + heap_size + ' Max Heap Size')
-    ax.legend()
+    ax.set_title(array[0].split('-')[5] + ' Operations on a ' + heap_size + ' Max Heap Size', loc='right')
+    ax.legend(bbox_to_anchor=(0., 1.02, 1., .102), edgecolor='black', fancybox=True, loc=1, ncol=4)
     fig.set_size_inches((18, 9), forward=False)
     plt.savefig('graphs/throughput_heap_size_' + heap_size, dpi=100)
 
@@ -444,10 +510,11 @@ for f in maindir:
         read_stdout.append('results/' + f + '/' + final)
     workload = unquote(unquote(f))
     workload = workload.replace(':','-')
-    #s.mkdir('graphs/' + workload)
-    #graph_memory(read_stdout, garbageCollectors, workload)
-    #graph_latency(read_stdout, garbageCollectors, workload)
-    #graph_throughput(read_stdout, garbageCollectors, workload)
+    if not os.path.exists('graphs/' + workload):
+        os.mkdir('graphs/' + workload)
+    graph_memory(read_stdout, garbageCollectors, workload)
+    graph_latency(read_stdout, garbageCollectors, workload)
+    graph_throughput(read_stdout, garbageCollectors, workload)
 
 heap_sizes = ['4g', '6g', '8g']
 percentages = ['0', '10', '30', '50', '70', '90', '100']

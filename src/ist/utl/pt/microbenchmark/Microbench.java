@@ -1,5 +1,6 @@
 package ist.utl.pt.microbenchmark;
 
+import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Random;
 import java.util.Timer;
@@ -59,7 +60,14 @@ public class Microbench{
                 int dataSize = Integer.parseInt(arg[0].substring(0, arg[0].length()-1))*1000000;
                 int nOperations = Integer.parseInt(arg[2].substring(0, arg[2].length()-1))*1000000;
                 double readPercentage = (double) Integer.parseInt(arg[1]) / 100;
+                
                 Random rand = new Random();
+                ByteBuffer buffer = ByteBuffer.allocateDirect(nOperations*8);
+                for(int i=0; i<nOperations; i++){
+                    buffer.putDouble(rand.nextDouble());
+                }
+                buffer.flip();
+
                 Microbench dataSet = new Microbench(dataSize);
                 
                 // Used to print the throughput every 100ms
@@ -68,7 +76,7 @@ public class Microbench{
                 timer.schedule(rmdtask, 0, 100);
                 
                 for(int i=0; i<nOperations; i++) {
-                    if (rand.nextDouble() < readPercentage){
+                    if (buffer.getDouble() < readPercentage){
                         GenericObject object = dataSet.population.
                                 get(String.valueOf(rand.nextInt(dataSize-1)));
                         tmp += object.obj[0];
