@@ -91,18 +91,21 @@ public class Microbench{
                 }
                 bufferPercentage.flip();
                 bufferAccess.flip();
-                
+
+
+                // Disable System.err printing to System.out
                 PrintStream original = System.out;
                 System.setErr(new NullPrintStream());               
 
                 Microbench dataSet = new Microbench(dataSize);
 
+                // Timed task each 10s that prints the throughput in that time span
                 RemindTask rmdtask = new RemindTask();
                 Timer timer = new Timer(true);
                 timer.scheduleAtFixedRate(rmdtask, 10000, 10000);
                 
                 for(int i=0; i<nOperations; i++) {
-                  
+					// Get the element to perform the read/write operation upon                  
                     GenericObject object = dataSet.population.
                             get(String.valueOf(bufferAccess.getInt()));
                     
